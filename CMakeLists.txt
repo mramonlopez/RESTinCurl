@@ -9,6 +9,8 @@ if (NOT DEFINED WITH_APIDOC)
     option(WITH_APIDOC "Generate Doxygen documentation")
 endif()
 
+option(RESTINCURL_BUILD_TEST "Use an external JSON library" OFF)
+
 macro(SET_CPP_STANDARD target)
     message(STATUS "Using C++ 14 for ${target}")
     set_property(TARGET ${target} PROPERTY CXX_STANDARD 14)
@@ -27,7 +29,9 @@ include_directories(
 
 link_directories( ${CURL_LIBRARIES} )
 
-enable_testing()
-add_subdirectory(tests)
+if (RESTINCURL_BUILD_TEST)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
 
 include(cmake_scripts/doxygen.cmake)
