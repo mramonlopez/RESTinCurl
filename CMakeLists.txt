@@ -9,7 +9,7 @@ if (NOT DEFINED WITH_APIDOC)
     option(WITH_APIDOC "Generate Doxygen documentation")
 endif()
 
-option(RESTINCURL_BUILD_TEST "Use an external JSON library" OFF)
+option(RESTINCURL_BUILD_TEST "Build tests" OFF)
 
 macro(SET_CPP_STANDARD target)
     message(STATUS "Using C++ 14 for ${target}")
@@ -25,7 +25,7 @@ set(DEFAULT_LIBRARIES ${CURL_LIBRARIES} pthread)
 include_directories(
     ${CURL_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}/include
-    )
+)
 
 link_directories( ${CURL_LIBRARIES} )
 
