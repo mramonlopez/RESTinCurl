@@ -47,9 +47,16 @@
 #include <curl/easy.h>
 #include <fcntl.h>
 #include <string.h>
+
+#ifdef _WIN32
+#include <winsock2.h>
+#include <windows.h>
+#include <ws2tcpip.h>
+#else
 #include <sys/select.h>
 #include <sys/time.h>
 #include <unistd.h>
+#endif
 
 #ifdef RESTINCURL_WITH_OPENSSL_THREADS
 #   include <openssl/crypto.h>
@@ -273,7 +280,7 @@ private:
         std::string body;
     };
 
-    enum class RequestType { GET, PUT, POST, HEAD, DELETE, PATCH, OPTIONS, INVALID };
+    enum class RequestType { GET, PUT, POST, HEAD, DELETE_REQUEST, PATCH, OPTIONS, INVALID };
     
     /*! Completion debug_callback
      * 
@@ -545,7 +552,7 @@ private:
                     headers_ = curl_slist_append(headers_, "Transfer-Encoding: chunked");
                     curl_easy_setopt(*eh_, CURLOPT_CUSTOMREQUEST, "PATCH");
                     break;
-                case RequestType::DELETE:
+                case RequestType::DELETE_REQUEST:
                     curl_easy_setopt(*eh_, CURLOPT_CUSTOMREQUEST, "DELETE");
                     break;
                 default:
@@ -565,7 +572,7 @@ private:
 #if RESTINCURL_ENABLE_ASYNC
 
     class Signaler {
-        enum FdUsage { FD_READ = 0, FD_WRITE = 1};
+        enum FdUsage { FD_USAGE_READ = 0, FD_USAGE_WRITE = 1};
 
     public:
         using pipefd_t = std::array<int, 2>;
@@ -592,17 +599,17 @@ private:
         void Signal() {
             char byte = {};
             RESTINCURL_LOG_TRACE("Signal: Signaling!");
-            if (write(pipefd_[FD_WRITE], &byte, 1) != 1) {
+            if (write(pipefd_[FD_USAGE_WRITE], &byte, 1) != 1) {
                 throw SystemException("write pipe", errno);
             }
         }
 
-        int GetReadFd() { return pipefd_[FD_READ]; }
+        int GetReadFd() { return pipefd_[FD_USAGE_READ]; }
 
         bool WasSignalled() {
             bool rval = false;
             char byte = {};
-            while(read(pipefd_[FD_READ], &byte, 1) > 0) {
+            while(read(pipefd_[FD_USAGE_READ], &byte, 1) > 0) {
                 RESTINCURL_LOG_TRACE("Signal: Was signalled");
                 rval = true;
             }
@@ -1160,7 +1167,7 @@ private:
 
         /*! Use a HTTP DELETE request */
         RequestBuilder& Delete(const std::string& url) {
-            return Prepare(RequestType::DELETE, url);
+            return Prepare(RequestType::DELETE_REQUEST, url);
         }
 
         /*! Use a HTTP OPTIONS request */
